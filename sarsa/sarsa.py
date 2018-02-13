@@ -149,14 +149,14 @@ if __name__ == "__main__":
     eps = 0.001
     #eps_decay = 0.0
     #eps_min = 0.01
-    alpha = 0.5
+    alpha = 0.2
 
     NUM_ITERATIONS = 30
     WINNING_MEAN = 170
     EPS_ANALYSIS = 0
     ALPHA_ANALYSIS = 1
     DISCOUNT_ANALYSIS = 2
-    mode = EPS_ANALYSIS
+    mode = ALPHA_ANALYSIS
 
     # number of discrete states
     n_bins = 8
@@ -201,15 +201,18 @@ if __name__ == "__main__":
         title = r'$\gamma = {:.3f}; \alpha = {:.3f}$'.format(discount, alpha)
         label = r'$\epsilon$'
         name = 'eps_sensibility.png'
+        ax.set_ylim((0,2000))
     elif (mode == ALPHA_ANALYSIS):
         title = r'$\gamma = {:.3f}; \epsilon = {:.3f}$'.format(discount, eps)
         label = r'$\alpha$'
         name = 'lr_sensibility.png'
+        ax.set_ylim((0,1000))
     else:
         title = r'$\alpha = {:.3f}; \epsilon = {:.3f}$'.format(alpha, eps)
         label = r'$1-\gamma$'
         eval_array = [np.around(1-disc, decimals=1) for disc in eval_array]
         name = 'discount_sensibility.png'
+        ax.set_ylim((0,1500))
 
     ax.set_title(title)
     ax.set_ylabel('episodes to converge')
