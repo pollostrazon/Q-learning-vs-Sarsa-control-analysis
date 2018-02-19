@@ -138,8 +138,8 @@ def build_state(state):
 
     """
     return (np.digitize([state[0]], cart_position_bins)[0],
-            np.digitize([state[1]], pole_angle_bins)[0],
-            np.digitize([state[2]], cart_velocity_bins)[0],
+            np.digitize([state[1]], cart_velocity_bins)[0],
+            np.digitize([state[2]], pole_angle_bins)[0],
             np.digitize([state[3]], angle_rate_bins)[0])
 
 if __name__ == "__main__":
@@ -164,8 +164,8 @@ if __name__ == "__main__":
 
     # discrete states for each variable
     cart_position_bins = pandas.cut([-2.4, 2.4], bins=n_bins, retbins=True)[1][1:-1]
-    pole_angle_bins = pandas.cut([-2, 2], bins=n_bins_angle, retbins=True)[1][1:-1]
     cart_velocity_bins = pandas.cut([-1, 1], bins=n_bins, retbins=True)[1][1:-1]
+    pole_angle_bins = pandas.cut([-2, 2], bins=n_bins_angle, retbins=True)[1][1:-1]
     angle_rate_bins = pandas.cut([-3.5, 3.5], bins=n_bins_angle, retbins=True)[1][1:-1]
 
     array_eps_to_conv = []
@@ -174,7 +174,7 @@ if __name__ == "__main__":
     elif (mode == ALPHA_ANALYSIS):
         eval_array = [0.1,0.2,0.3,0.4,0.5]
     else:
-        eval_array = [0.9,0.8,0.7,0.6,0.5]
+        eval_array = [0.999,0.8,0.7,0.6,0.5]
 
     for t in range(NUM_ITERATIONS):
         array_temp = []
@@ -189,7 +189,7 @@ if __name__ == "__main__":
                 has_converged, episodes_to_converge = sarsa_control(env, max_num_episodes, hyperparameter, eps, alpha)
 
             array_temp.append(episodes_to_converge)
-            print(hyperparameter, ")the thing ", "has converged" if (has_converged) else "hasn't converged", " after ", episodes_to_converge, " episodes.")
+            print(hyperparameter, ")the system ", "has converged" if (has_converged) else "hasn't converged", " after ", episodes_to_converge, " episodes.")
 
         array_eps_to_conv.append(array_temp)
 
@@ -210,7 +210,7 @@ if __name__ == "__main__":
     else:
         title = r'$\alpha = {:.3f}; \epsilon = {:.3f}$'.format(alpha, eps)
         label = r'$1-\gamma$'
-        eval_array = [np.around(1-disc, decimals=1) for disc in eval_array]
+        eval_array = [np.around(1-disc, decimals=4) for disc in eval_array]
         name = 'discount_sensibility.png'
         ax.set_ylim((0,1500))
 
