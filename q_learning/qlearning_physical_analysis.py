@@ -79,7 +79,10 @@ def q_learning_control(env, max_num_episodes, discount=1.0, eps=0.99, alpha=0.05
 
     for num_episodes in range(max_num_episodes):
         totalreward = 0     # total reward in this episodes (+1 each step)
-        state = build_state(env.reset())
+        state = env.reset()
+        x = [state[0]]
+        thetas = [state[2]*360/(2*np.pi)]
+        state = build_state(state)
         policy = make_eps_greedy_policy(Q, eps, env.action_space.n)
 
         for t in itertools.count():
@@ -88,6 +91,8 @@ def q_learning_control(env, max_num_episodes, discount=1.0, eps=0.99, alpha=0.05
 
             # take the current action and observe the reward
             next_state, reward, done, _ = env.step(action)
+            x.append(next_state[0])
+            thetas.append(next_state[2]*360/(2*np.pi))
             next_state = build_state(next_state)
 
             # if the cartpole system fell down during this episode
@@ -119,7 +124,7 @@ def q_learning_control(env, max_num_episodes, discount=1.0, eps=0.99, alpha=0.05
             converged = True
             break
 
-    return converged, num_episodes
+    return converged, num_episodes, x, thetas
 
 def build_state(state):
     """Discretize the state returned by the environment.
@@ -149,12 +154,12 @@ if __name__ == "__main__":
     #eps_min = 0.01
     alpha = 0.2
 
-    NUM_ITERATIONS = 30
+    NUM_ITERATIONS = 10
     WINNING_MEAN = 170
     EPS_ANALYSIS = 0
     ALPHA_ANALYSIS = 1
     DISCOUNT_ANALYSIS = 2
-    mode = DISCOUNT_ANALYSIS
+    mode = ALPHA_ANALYSIS
 
     # number of discrete states
     n_bins = 8
@@ -166,55 +171,54 @@ if __name__ == "__main__":
     pole_angle_bins = pandas.cut([-2, 2], bins=n_bins_angle, retbins=True)[1][1:-1]
     angle_rate_bins = pandas.cut([-3.5, 3.5], bins=n_bins_angle, retbins=True)[1][1:-1]
 
-    array_eps_to_conv = []
-    if (mode == EPS_ANALYSIS):
-        eval_array = [0.001,0.003,0.006,0.01,0.013]
-    elif (mode == ALPHA_ANALYSIS):
-        eval_array = [0.1,0.2,0.3,0.5,0.7]
-    else:
-        eval_array = [0.999,0.8,0.7,0.6,0.5]
-
+    # array_eps_to_conv = []
+    # if (mode == EPS_ANALYSIS):
+    #     eval_array = [0.001,0.003,0.006,0.01,0.013]
+    # elif (mode == ALPHA_ANALYSIS):
+    #     eval_array = [0.1,0.2,0.3,0.5,0.7]
+    # else:
+    #     eval_array = [0.999,0.8,0.7,0.6,0.5]
+    #
+    x_array = []
+    thetas_array = []
     for t in range(NUM_ITERATIONS):
-        array_temp = []
         print(t)
 
-        for hyperparameter in eval_array:
-            if (mode == EPS_ANALYSIS):
-                has_converged, episodes_to_converge = q_learning_control(env, max_num_episodes, discount, hyperparameter, alpha)
-            elif (mode == ALPHA_ANALYSIS):
-                has_converged, episodes_to_converge = q_learning_control(env, max_num_episodes, discount, eps, hyperparameter)
-            else:
-                has_converged, episodes_to_converge = q_learning_control(env, max_num_episodes, hyperparameter, eps, alpha)
+        has_converged, episodes_to_converge, x, thetas = \
+            q_learning_control(env, max_num_episodes, discount, eps, alpha)
 
-            array_temp.append(episodes_to_converge)
-            print(hyperparameter, ")the system ", "has converged" if (has_converged) else "hasn't converged", " after ", episodes_to_converge, " episodes.")
+        x_array.append(x)
+        thetas_array.append(thetas)
 
-        array_eps_to_conv.append(array_temp)
-
-    array_eps_to_conv = np.array(array_eps_to_conv)
     fig = plt.figure()
-    ax = fig.add_subplot(111)
+    title = r'$\gamma = {:.3f}; \alpha = {:.3f}; \epsilon = {:.3f}$'\
+                .format(discount, alpha, eps)
+    plt.suptitle(title)
+    name = 'qlearning_variable_plot.png'
 
-    if (mode == EPS_ANALYSIS):
-        title = r'$\gamma = {:.3f}; \alpha = {:.3f}$'.format(discount, alpha)
-        label = r'$\epsilon$'
-        name = 'eps_sensibility.png'
-        ax.set_ylim((0,2000))
-    elif (mode == ALPHA_ANALYSIS):
-        title = r'$\gamma = {:.3f}; \epsilon = {:.3f}$'.format(discount, eps)
-        label = r'$\alpha$'
-        name = 'lr_sensibility.png'
-        ax.set_ylim((0,1000))
-    else:
-        title = r'$\alpha = {:.3f}; \epsilon = {:.3f}$'.format(alpha, eps)
-        label = r'$1-\gamma$'
-        eval_array = [np.around(1-disc, decimals=4) for disc in eval_array]
-        name = 'discount_sensibility.png'
-        ax.set_ylim((0,1500))
+    ax = fig.add_subplot(211)
+    ylabel = r'$\theta [°]$'
+    xlabel = r'$t [s]$'
+    ax.set_ylabel(ylabel)
+    for i in range(len(thetas_array)):
+        ax.plot(np.arange(len(thetas_array[i])).dot(0.02), thetas_array[i])
+        ax.plot(np.arange(len(thetas_array[i])).dot(0.02), np.tile(12,len(thetas_array[i])), linestyle='--', color='black')
+        ax.plot(np.arange(len(thetas_array[i])).dot(0.02), np.tile(-12,len(thetas_array[i])), linestyle='--', color='black')
+    ax.set_ylim((-14,14))
+    ax.set_xlim((0,3.4))
 
-    ax.set_title(title)
-    ax.set_ylabel('episodes to converge')
-    ax.set_xlabel(label)
-    ax.boxplot(array_eps_to_conv, labels=eval_array)
+    ax = fig.add_subplot(212)
+    ylabel = r'$x [m]$'
+    xlabel = r'$t [s]$'
+    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel)
+    for i in range(len(x_array)):
+        ax.plot(np.arange(len(x_array[i])).dot(0.02), x_array[i])
+        ax.plot(np.arange(len(x_array[i])).dot(0.02), np.tile(2.4,len(x_array[i])), linestyle='--', color='black')
+        ax.plot(np.arange(len(x_array[i])).dot(0.02), np.tile(-2.4,len(x_array[i])), linestyle='--', color='black')
+    ax.set_ylim((-2.8,2.8))
+    ax.set_xlim((0,3.4))
+
+
     plt.savefig(name)
     #plt.show()

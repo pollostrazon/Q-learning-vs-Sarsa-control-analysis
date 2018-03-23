@@ -172,7 +172,7 @@ if __name__ == "__main__":
     if (mode == EPS_ANALYSIS):
         eval_array = [0.001,0.003,0.006,0.01,0.013]
     elif (mode == ALPHA_ANALYSIS):
-        eval_array = [0.1,0.2,0.3,0.4,0.5]
+        eval_array = [0.1,0.2,0.3,0.5,0.7]
     else:
         eval_array = [0.999,0.8,0.7,0.6,0.5]
 
